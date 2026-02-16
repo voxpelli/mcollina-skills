@@ -172,6 +172,30 @@ it('test 2', (t) => {
 });
 ```
 
+## EventEmitter Timing in Tests
+
+When testing `EventEmitter` behavior, always register listeners before triggering the action that emits events.
+
+If you call `emit()` before `on()`, `once()`, or `events.once(...)` is attached, the event is lost and the test may hang or fail intermittently.
+
+```typescript
+import { EventEmitter, once } from 'node:events';
+
+it('waits for ready event', async (t) => {
+  const emitter = new EventEmitter();
+
+  // GOOD: subscribe first
+  const readyPromise = once(emitter, 'ready');
+
+  startWorkThatEmitsReady(emitter);
+
+  const [payload] = await readyPromise;
+  t.assert.equal(payload.status, 'ok');
+});
+```
+
+This ordering is critical for reliable tests and avoiding flaky race conditions.
+
 ## Running Tests
 
 Run tests with the built-in runner:
